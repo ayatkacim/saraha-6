@@ -1,0 +1,40 @@
+import express from "express";
+import {connection} from "./db/index.js";
+import * as common from "./common/index.js"
+import config from "./config/config.service.js";
+import * as routers from "./module/index.js"
+import {redisClient} from "./db/redis.connection.js"
+
+
+
+const app = express()
+const port = config.port
+await connection()
+
+
+
+app.use(express.json())
+app.use("/auth", routers.authRouter)
+app.use("/user", routers.userRouter)
+app.use("/uploads", express.static("uploads"))
+//app.use("/message", routers.messageRouter)
+app.get("/",(req, res, next)=>{
+    res.status(200).json({
+        message: "welcome to my app"
+    })
+
+})
+
+app.use("/{*dummy}", (req, res, next)=>{
+    res.status(404).json({
+        message: "Route not found",
+        route: req.params.dummy.join("/")
+    })
+
+})
+
+app.use(common.middleware.globalErrorHandler)
+await redisClient.set("name", "ayat",{EX:30})
+app.listen(port,()=>{
+    console.log("server is running on port",port)
+})
